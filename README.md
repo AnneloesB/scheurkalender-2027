@@ -15,6 +15,7 @@ Je voortgang wordt bewaard in je eigen browser; er wordt niets naar een server g
 ## Bronnen en credits
 - De kalender is gebaseerd op de scheurkalender van Netwerk Palliatieve Zorg Rivierengebied, die weer voortbouwt op de kalender van de Werkgroep Maatschappelijke Bewustwording en het Provinciaal Palliatief Team Groningen.
 - Kaarten van de landelijke publiekscampagne **Leven tot het laatst** (PZNL en partners), inclusief het campagnelogo. Teksten uit de folder ‘Zorg tot het laatst’, de Compelling Story en de Q&A van de campagne.
+- Citaten bij het kunstwerk **Blijf nabij** (Saskia Stoltz/SAZZA, Nationaal Programma Palliatieve Zorg II) en van **Anita Witzier** over de KRO-NCRV-serie *Leven tot het laatst* (toestemming nog nodig).
 - Vragen uit het kaartspel ‘Kaartjes van Betekenis’ – Bureau MORBidee.
 - Citaten van Nicolaas Beets, Hendrik Marsman en Hieronymus van Alphen komen uit DBNL en Project Gutenberg (publiek domein).
 
