@@ -54,6 +54,8 @@ p.lead{color:var(--muted);margin:.2rem 0 1rem;line-height:1.45}
 .chipbtn:active{transform:scale(.98)}
 .chipbtn[aria-pressed="true"]{border-color:var(--brand);background:color-mix(in srgb,var(--brand) 10%,var(--paper))}
 .modes{display:grid;gap:8px}
+.modes.dimmed{opacity:.45}
+.kernnote{font-size:.85rem;color:var(--muted);margin:8px 0 0}
 .modes .chipbtn{padding:14px}
 .modes small{display:block;color:var(--muted);margin-top:2px}
 .prog-note{font-size:.8rem;color:var(--up);margin-top:3px}
@@ -167,8 +169,9 @@ th{background:var(--chip);position:sticky;top:0}
       <div class="modes" id="modes"></div>
     </div>
     <div>
-      <h2>3. Onderwerp <span style="font-weight:400;color:var(--muted)">(optioneel, kernelementen)</span></h2>
+      <h2>3. Onderwerp <span style="font-weight:400;color:var(--muted)">(optioneel, kernelementen uit het hele jaar)</span></h2>
       <div class="modes kerns" id="kerns"></div>
+      <p class="kernnote" id="kernnote" hidden>Bij een onderwerp zie je alle kaarten van dat onderwerp uit het hele jaar. Stap 2 telt dan niet mee.</p>
     </div>
   </div>
   <button class="primary" id="go" disabled>Start</button>
@@ -247,17 +250,19 @@ const KERNS = {
   consultatie: {label:'Consultatie bij complexe problematiek', icon:'📞'}
 };
 let S = {name:null, mode:null, kern:'alle', list:[], idx:0, ratings:{}, pos:{}};
-const posKey = () => S.mode + '|' + S.kern;
+const posKey = () => S.kern!=='alle' ? 'alle|' + S.kern : S.mode + '|alle';
 
 function cardsFor(name, mode, kern){
   const C = DATA.cards; let r;
+  // een onderwerp toont altijd alle kaarten van dat onderwerp uit het hele jaar, los van stap 2
+  if(kern && kern!=='alle') return C.map((c,i)=>c.kern.includes(kern)?i:-1).filter(i=>i>=0);
   if(mode==='alle') r = C.map((_,i)=>i);
   else if(mode==='gewijzigd') r = C.map((c,i)=>c.changed?i:-1).filter(i=>i>=0);
   else if(mode==='spreuken') r = C.map((c,i)=>(c.herkomst==='zelf'||c.herkomst==='vrij'||c.herkomst==='toestemming')?i:-1).filter(i=>i>=0);
   else if(mode==='campagne') r = C.map((c,i)=>c.herkomst==='campagne'?i:-1).filter(i=>i>=0);
   else if(mode==='feedback') r = C.map((c,i)=>c.fbk?i:-1).filter(i=>i>=0);
   else { const [a,b] = DATA.blocks[name]; r=[]; for(let i=a;i<b;i++) r.push(i); }
-  return (!kern || kern==='alle') ? r : r.filter(i=>C[i].kern.includes(kern));
+  return r;
 }
 function load(name){ const s = store.get(KEY(name)) || {}; S.ratings = s.ratings || {}; S.pos = s.pos || {}; }
 function save(){ store.set(KEY(S.name), {ratings:S.ratings, pos:S.pos}); }
@@ -274,27 +279,29 @@ function renderStart(){
   });
   $('modes').innerHTML = '';
   Object.entries(MODES).forEach(([k,m])=>{
-    const b = document.createElement('button'); b.className='chipbtn'; b.setAttribute('aria-pressed', S.mode===k);
+    const b = document.createElement('button'); b.className='chipbtn'; b.setAttribute('aria-pressed', S.kern==='alle' && S.mode===k);
     let sub = m.desc;
     if(S.name){
-      const L = cardsFor(S.name,k,S.kern), C = DATA.cards;
+      const L = cardsFor(S.name,k,'alle'), C = DATA.cards;
       const B = cardsFor(S.name,k,'alle');
       sub = (k==='blok' ? `${C[B[0]].date} t/m ${C[B[B.length-1]].date} · ` : '') + `${L.length} kaart${L.length===1?'':'en'}`;
       const done = L.filter(i=>S.ratings[C[i].id]).length;
       if(done) sub += `</small><div class="prog-note">${done} al beoordeeld</div><small>`;
     }
     b.innerHTML = `<b>${m.label}</b><small>${sub}</small>`;
-    b.onclick = ()=>{ S.mode=k; renderStart(); };
+    b.onclick = ()=>{ S.mode=k; S.kern='alle'; renderStart(); };
     $('modes').appendChild(b);
   });
   $('kerns').innerHTML = '';
   Object.entries(KERNS).forEach(([k,m])=>{
     const b = document.createElement('button'); b.className='chipbtn'; b.setAttribute('aria-pressed', S.kern===k);
-    const n = (S.name && S.mode) ? cardsFor(S.name, S.mode, k).length : null;
+    const n = k==='alle' ? null : cardsFor(S.name, S.mode, k).length;
     b.innerHTML = `<b>${m.icon?m.icon+' ':''}${m.label}</b>${n!==null?`<small>${n} kaart${n===1?'':'en'}</small>`:''}`;
     b.onclick = ()=>{ S.kern=k; renderStart(); };
     $('kerns').appendChild(b);
   });
+  $('modes').classList.toggle('dimmed', S.kern!=='alle');
+  $('kernnote').hidden = S.kern==='alle';
   const n = (S.name && S.mode) ? cardsFor(S.name, S.mode, S.kern).length : 0;
   $('go').disabled = !(S.name && S.mode && n);
   $('go').textContent = S.name ? (n ? `Start als ${S.name} (${n} kaart${n===1?'':'en'})` : 'Geen kaarten in deze combinatie') : 'Start';
@@ -339,7 +346,7 @@ function cardHTML(c){
     <div class="stamp up">GOED</div><div class="stamp down">KAN BETER</div>`;
 }
 function renderDeck(){
-  $('who').textContent = S.name; $('modeLbl').textContent = MODES[S.mode].label + (S.kern!=='alle' ? ' · ' + KERNS[S.kern].label : '');
+  $('who').textContent = S.name; $('modeLbl').textContent = S.kern!=='alle' ? KERNS[S.kern].label + ' (hele jaar)' : MODES[S.mode].label;
   const n = S.list.length;
   $('barFill').style.width = (n ? S.idx/n*100 : 0) + '%';
   $('count').textContent = `${Math.min(S.idx+1,n)} / ${n}`;
